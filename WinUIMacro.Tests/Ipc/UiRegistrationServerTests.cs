@@ -117,8 +117,8 @@ public sealed class UiRegistrationServerTests
             token,
             expectedExecutablePath,
             cancellationToken,
-            // GitHub 的 Windows 托管运行器以提升权限执行测试；这些用例验证注册协议，
-            // 生产调用仍使用默认值拒绝提升权限的 Explorer 客户端。
+            // GitHub 的 Windows 托管运行器以提升权限执行测试；这些用例只验证注册协议。
+            // 生产调用在普通 Engine 下拒绝提升 UI，在提升 Engine 下允许同级 UI。
             rejectElevatedClient: false
         );
 

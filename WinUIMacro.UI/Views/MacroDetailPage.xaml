@@ -14,9 +14,13 @@
       AllowDrop="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
       CanDragItems="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
       CanReorderItems="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
-      SelectionMode="Single"
+      SelectionMode="Extended"
+      DragItemsCompleted="NodeGrid_DragItemsCompleted"
+      DragItemsStarting="NodeGrid_DragItemsStarting"
       KeyDown="NodeGrid_KeyDown"
+      PointerPressed="NodeGrid_PointerPressed"
       PointerWheelChanged="NodeGrid_PointerWheelChanged"
+      Tapped="NodeGrid_Tapped"
     >
       <GridView.ItemsPanel>
         <ItemsPanelTemplate>

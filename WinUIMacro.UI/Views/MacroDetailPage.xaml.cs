@@ -1,34 +1,60 @@
 // 管理宏详情页的节点列表绑定、拖拽排序和编辑交互。
 using System.Collections.Specialized;
+using System.ComponentModel;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Windows.System;
+using Windows.UI.Core;
 
 namespace WinUIMacro.UI.Views;
 
 public sealed partial class MacroDetailPage : Page, IDisposable
 {
+    private readonly TransitionCollection? _defaultItemContainerTransitions;
+    private readonly Dictionary<UIElement, double> _hiddenDraggedElements = [];
+    private MacroNodeViewModel[] _draggedNodes = [];
+    private MacroNodeViewModel? _pointerDragNode;
     private bool _scrollPending;
 
-    public MacroDetailPage() => InitializeComponent();
+    public MacroDetailPage()
+    {
+        InitializeComponent();
+        _defaultItemContainerTransitions = NodeGrid.ItemContainerTransitions;
+    }
 
     internal MacroWorkspaceViewModel ViewModel { get; private set; } = null!;
     internal MacroEditorViewModel Macro { get; private set; } = null!;
 
     internal void Activate(MacroWorkspaceViewModel viewModel, MacroEditorViewModel macro)
     {
+        if (ViewModel is not null)
+            ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
         if (Macro is not null)
+        {
             Macro.Nodes.CollectionChanged -= Nodes_CollectionChanged;
+            if (!ReferenceEquals(Macro, macro))
+                Macro.ClearCopiedNodes();
+        }
         ViewModel = viewModel;
         Macro = macro;
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         Macro.Nodes.CollectionChanged += Nodes_CollectionChanged;
+        UpdateItemContainerTransitions();
         Bindings.Update();
     }
 
     public void Dispose()
     {
+        RestoreHiddenDraggedElements();
+        if (ViewModel is not null)
+            ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
         if (Macro is not null)
+        {
             Macro.Nodes.CollectionChanged -= Nodes_CollectionChanged;
+            Macro.ClearCopiedNodes();
+        }
         Bindings.StopTracking();
         NodeGrid.ItemsSource = null;
         ViewModel = null!;
@@ -37,26 +63,58 @@ public sealed partial class MacroDetailPage : Page, IDisposable
 
     private void NodeGrid_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (
-            !ViewModel.CanEditSequence
-            || e.OriginalSource is TextBox
-            || NodeGrid.SelectedItem is not MacroNodeViewModel node
-        )
+        if (FocusManager.GetFocusedElement(XamlRoot) is TextBox)
             return;
 
-        if (e.Key == VirtualKey.Enter && node.IsEditable)
+        var controlDown = IsKeyDown(VirtualKey.Control);
+        if (controlDown && e.Key == VirtualKey.A)
         {
-            BeginNodeEdit(node);
+            NodeGrid.SelectAll();
             e.Handled = true;
             return;
         }
-        if (e.Key is not (VirtualKey.Delete or VirtualKey.Back))
+
+        if (!ViewModel.CanEditSequence)
             return;
 
-        var removedIndex = Macro.Nodes.IndexOf(node);
-        Macro.Nodes.Remove(node);
-        SelectNodeAt(Math.Max(0, removedIndex - 1));
-        e.Handled = true;
+        var selectedNodes = GetSelectedNodes();
+        if (controlDown && e.Key == VirtualKey.C)
+        {
+            Macro.CopyNodes(selectedNodes);
+            e.Handled = true;
+        }
+        else if (controlDown && e.Key == VirtualKey.V)
+        {
+            NodeGrid.ItemContainerTransitions = CreateItemContainerTransitionsWithoutAddDelete();
+
+            try
+            {
+                var pastedNodes = Macro.PasteNodesAfterSelection(selectedNodes);
+                if (pastedNodes.Length > 0)
+                {
+                    SelectNodes(pastedNodes);
+                    NodeGrid.ScrollIntoView(pastedNodes[^1]);
+                }
+            }
+            finally
+            {
+                if (!DispatcherQueue.TryEnqueue(UpdateItemContainerTransitions))
+                    UpdateItemContainerTransitions();
+            }
+
+            e.Handled = true;
+        }
+        else if (e.Key == VirtualKey.Enter && selectedNodes is [var node] && node.IsEditable)
+        {
+            BeginNodeEdit(node);
+            e.Handled = true;
+        }
+        else if (e.Key is VirtualKey.Delete or VirtualKey.Back && selectedNodes.Length > 0)
+        {
+            var firstRemovedIndex = Macro.DeleteNodes(selectedNodes);
+            SelectNodeAt(Math.Max(0, firstRemovedIndex - 1));
+            e.Handled = true;
+        }
     }
 
     private void NodeGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
@@ -64,6 +122,22 @@ public sealed partial class MacroDetailPage : Page, IDisposable
         if (ViewModel.IsRecording)
             e.Handled = true;
     }
+
+    private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MacroWorkspaceViewModel.RecordingState))
+            UpdateItemContainerTransitions();
+    }
+
+    private void UpdateItemContainerTransitions()
+    {
+        NodeGrid.ItemContainerTransitions = ViewModel.IsRecording
+            ? CreateItemContainerTransitionsWithoutAddDelete()
+            : _defaultItemContainerTransitions;
+    }
+
+    private static TransitionCollection CreateItemContainerTransitionsWithoutAddDelete() =>
+        [new ContentThemeTransition(), new ReorderThemeTransition(), new EntranceThemeTransition()];
 
     private void Nodes_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -99,11 +173,92 @@ public sealed partial class MacroDetailPage : Page, IDisposable
         NodeGrid.Focus(FocusState.Programmatic);
     }
 
+    private MacroNodeViewModel[] GetSelectedNodes() =>
+        NodeGrid.SelectedItems.OfType<MacroNodeViewModel>().OrderBy(Macro.Nodes.IndexOf).ToArray();
+
+    private void SelectNodes(IEnumerable<MacroNodeViewModel> nodes)
+    {
+        NodeGrid.SelectedItems.Clear();
+        foreach (var node in nodes)
+            NodeGrid.SelectedItems.Add(node);
+    }
+
+    private void NodeGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        var container = FindAncestor<GridViewItem>(e.OriginalSource as DependencyObject);
+        _pointerDragNode = container is null
+            ? null
+            : NodeGrid.ItemFromContainer(container) as MacroNodeViewModel;
+    }
+
+    private void NodeGrid_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
+    {
+        if (!ViewModel.CanEditSequence)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        _draggedNodes = e
+            .Items.OfType<MacroNodeViewModel>()
+            .Distinct()
+            .OrderBy(Macro.Nodes.IndexOf)
+            .ToArray();
+        if (_draggedNodes.Length == 0 && _pointerDragNode is not null)
+            _draggedNodes = [_pointerDragNode];
+        SelectNodes(_draggedNodes);
+        HideSecondaryDraggedElements();
+    }
+
+    private void NodeGrid_DragItemsCompleted(object sender, DragItemsCompletedEventArgs e)
+    {
+        RestoreHiddenDraggedElements();
+        if (_draggedNodes.Length > 0)
+            SelectNodes(_draggedNodes);
+        _draggedNodes = [];
+        _pointerDragNode = null;
+    }
+
+    private void NodeGrid_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (FindAncestor<GridViewItem>(e.OriginalSource as DependencyObject) is null)
+        {
+            NodeGrid.SelectedItems.Clear();
+            NodeGrid.Focus(FocusState.Pointer);
+        }
+    }
+
+    private void HideSecondaryDraggedElements()
+    {
+        RestoreHiddenDraggedElements();
+        foreach (var node in _draggedNodes)
+        {
+            if (
+                ReferenceEquals(node, _pointerDragNode)
+                || NodeGrid.ContainerFromItem(node) is not UIElement element
+            )
+                continue;
+            _hiddenDraggedElements.Add(element, element.Opacity);
+            element.Opacity = 0;
+        }
+    }
+
+    private void RestoreHiddenDraggedElements()
+    {
+        foreach (var (element, opacity) in _hiddenDraggedElements)
+            element.Opacity = opacity;
+        _hiddenDraggedElements.Clear();
+    }
+
     private void EditableNodeDisplay_Tapped(object sender, TappedRoutedEventArgs e)
     {
         if (
             !ViewModel.CanEditSequence
             || (sender as FrameworkElement)?.Tag is not MacroNodeViewModel node
+            || IsKeyDown(VirtualKey.Control)
+            || IsKeyDown(VirtualKey.Shift)
+            || NodeGrid.SelectedItems.Count != 1
+            || !NodeGrid.SelectedItems.Contains(node)
         )
             return;
 
@@ -114,7 +269,7 @@ public sealed partial class MacroDetailPage : Page, IDisposable
     private void BeginNodeEdit(MacroNodeViewModel node)
     {
         node.BeginEdit();
-        NodeGrid.SelectedItem = node;
+        SelectNodes([node]);
         DispatcherQueue.TryEnqueue(() =>
         {
             if (NodeGrid.ContainerFromItem(node) is not DependencyObject container)
@@ -176,4 +331,19 @@ public sealed partial class MacroDetailPage : Page, IDisposable
         }
         return null;
     }
+
+    private static T? FindAncestor<T>(DependencyObject? element)
+        where T : DependencyObject
+    {
+        while (element is not null)
+        {
+            if (element is T match)
+                return match;
+            element = VisualTreeHelper.GetParent(element);
+        }
+        return null;
+    }
+
+    private static bool IsKeyDown(VirtualKey key) =>
+        (InputKeyboardSource.GetKeyStateForCurrentThread(key) & CoreVirtualKeyStates.Down) != 0;
 }

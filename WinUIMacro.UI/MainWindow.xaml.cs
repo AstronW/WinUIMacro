@@ -4,10 +4,9 @@ public sealed partial class MainWindow : Window, IDisposable
 {
     private bool _disposed;
 
-    internal MainWindow(MacroWorkspaceViewModel viewModel, bool isElevated)
+    internal MainWindow(MacroWorkspaceViewModel viewModel)
     {
         ViewModel = viewModel;
-        IsElevated = isElevated;
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -18,8 +17,6 @@ public sealed partial class MainWindow : Window, IDisposable
     }
 
     internal MacroWorkspaceViewModel ViewModel { get; }
-
-    internal bool IsElevated { get; }
 
     public void Dispose()
     {

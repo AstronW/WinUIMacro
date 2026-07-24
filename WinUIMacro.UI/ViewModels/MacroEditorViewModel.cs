@@ -10,6 +10,7 @@ internal partial class MacroEditorViewModel : ObservableObject
 {
     private readonly string _initialName;
     private readonly Dictionary<MacroNodeViewModel, long> _nodeDelays = [];
+    private MacroNode[] _copiedNodes = [];
     private MacroDefinition? _savedSnapshot;
     private long _totalDelayMilliseconds;
     private bool _isApplyingDefinition;
@@ -149,6 +150,74 @@ internal partial class MacroEditorViewModel : ObservableObject
     }
 
     public void AddNode(MacroNode node) => Nodes.Add(new MacroNodeViewModel(node.Type, node.Value));
+
+    public void CopyNodes(IEnumerable<MacroNodeViewModel> nodes)
+    {
+        var copiedNodes = nodes
+            .Distinct()
+            .Select(node => (Node: node, Index: Nodes.IndexOf(node)))
+            .Where(item => item.Index >= 0)
+            .OrderBy(item => item.Index)
+            .Select(item => item.Node.ToModel())
+            .ToArray();
+        if (copiedNodes.Length > 0)
+            _copiedNodes = copiedNodes;
+    }
+
+    public void ClearCopiedNodes() => _copiedNodes = [];
+
+    public MacroNodeViewModel[] PasteNodesAfterSelection(
+        IEnumerable<MacroNodeViewModel> selectedNodes
+    )
+    {
+        if (_copiedNodes.Length == 0)
+            return [];
+
+        var selectedIndexes = selectedNodes
+            .Distinct()
+            .Select(Nodes.IndexOf)
+            .Where(index => index >= 0)
+            .ToArray();
+        var insertIndex = selectedIndexes.Length == 0 ? Nodes.Count : selectedIndexes.Max() + 1;
+        var pastedNodes = _copiedNodes
+            .Select(node => new MacroNodeViewModel(node.Type, node.Value))
+            .ToArray();
+        foreach (var node in pastedNodes)
+            Nodes.Insert(insertIndex++, node);
+        return pastedNodes;
+    }
+
+    public int DeleteNodes(IEnumerable<MacroNodeViewModel> nodes)
+    {
+        var indexes = nodes
+            .Distinct()
+            .Select(Nodes.IndexOf)
+            .Where(index => index >= 0)
+            .OrderDescending()
+            .ToArray();
+        foreach (var index in indexes)
+            Nodes.RemoveAt(index);
+        return indexes.Length == 0 ? -1 : indexes[^1];
+    }
+
+    public void MoveNodes(IReadOnlyList<MacroNodeViewModel> nodes, int targetIndex)
+    {
+        var indexedNodes = nodes
+            .Distinct()
+            .Select(node => (Node: node, Index: Nodes.IndexOf(node)))
+            .Where(item => item.Index >= 0)
+            .OrderBy(item => item.Index)
+            .ToArray();
+        if (indexedNodes.Length == 0)
+            return;
+
+        targetIndex = Math.Clamp(targetIndex, 0, Nodes.Count);
+        var insertionIndex = targetIndex - indexedNodes.Count(item => item.Index < targetIndex);
+        foreach (var item in indexedNodes.OrderByDescending(item => item.Index))
+            Nodes.RemoveAt(item.Index);
+        foreach (var item in indexedNodes)
+            Nodes.Insert(insertionIndex++, item.Node);
+    }
 
     public void RevertToSavedSnapshot()
     {

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using WinUIMacro.Contracts;
 using WinUIMacro.Contracts.Ipc;
 
@@ -12,8 +13,34 @@ internal partial class MacroWorkspaceViewModel
     public partial MacroEditorViewModel? SelectedMacro { get; set; }
 
     public bool CanChangeWorkspace => !_isWorkspaceBusy;
+    public bool CanCopySelectedMacro => CanEditSequence && SelectedMacro is { IsDirty: false };
+    public bool CanSaveSelectedMacro => CanEditSequence && SelectedMacro is { IsDirty: true };
 
     internal Task InitializeAsync() => ReloadLibraryAsync();
+
+    partial void OnSelectedMacroChanged(
+        MacroEditorViewModel? oldValue,
+        MacroEditorViewModel? newValue
+    )
+    {
+        if (oldValue is not null)
+            oldValue.PropertyChanged -= SelectedMacro_PropertyChanged;
+        if (newValue is not null)
+            newValue.PropertyChanged += SelectedMacro_PropertyChanged;
+        NotifySelectedMacroCommandAvailability();
+    }
+
+    private void SelectedMacro_PropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(MacroEditorViewModel.IsDirty))
+            NotifySelectedMacroCommandAvailability();
+    }
+
+    private void NotifySelectedMacroCommandAvailability()
+    {
+        OnPropertyChanged(nameof(CanCopySelectedMacro));
+        OnPropertyChanged(nameof(CanSaveSelectedMacro));
+    }
 
     [RelayCommand]
     private async Task RefreshMacrosAsync()
@@ -266,6 +293,7 @@ internal partial class MacroWorkspaceViewModel
             return;
         OnPropertyChanged(nameof(CanChangeWorkspace));
         OnPropertyChanged(nameof(CanEditSequence));
+        NotifySelectedMacroCommandAvailability();
     }
 
     private void SortMacros()

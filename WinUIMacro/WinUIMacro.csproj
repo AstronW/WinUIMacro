@@ -27,6 +27,15 @@
     <ProjectReference Include="..\WinUIMacro.Engine\WinUIMacro.Engine.csproj" />
   </ItemGroup>
 
+  <!-- CLI 发布不会可靠清除旧布局；先清空当前 profile 的生成目录，避免压缩包混入残留文件。 -->
+  <Target
+    Name="CleanCombinedPublishDirectory"
+    BeforeTargets="PrepareForPublish"
+    Condition="'$(DeleteExistingFiles)' == 'true' and '$(PublishDir)' != ''"
+  >
+    <RemoveDir Directories="$(PublishDir)" />
+  </Target>
+
   <!-- Host 与 UI 是两个进程，发布时需要把两份输出合并到同一目录。 -->
   <Target
     Name="PublishUiToCombinedDirectory"
@@ -36,11 +45,12 @@
     <PropertyGroup>
       <UiProject>$(MSBuildProjectDirectory)\..\WinUIMacro.UI\WinUIMacro.UI.csproj</UiProject>
       <UiPublishDirectory>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)ui-publish\', '$(MSBuildProjectDirectory)'))</UiPublishDirectory>
-      <UiPublishProperties>Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);PublishProfile=$(UiPublishProfile);PublishDir=$(UiPublishDirectory);SelfContained=$(SelfContained);WindowsAppSDKSelfContained=$(WindowsAppSDKSelfContained);SatelliteResourceLanguages=$(SatelliteResourceLanguages);DebugType=$(DebugType);DebugSymbols=$(DebugSymbols);PublishSingleFile=$(PublishSingleFile);PublishReadyToRun=$(PublishReadyToRun);PublishTrimmed=$(PublishTrimmed);DeleteExistingFiles=true</UiPublishProperties>
+      <UiPublishProperties>Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);PublishProfile=$(UiPublishProfile);PublishDir=$(UiPublishDirectory);SelfContained=$(SelfContained);WindowsAppSDKSelfContained=$(WindowsAppSDKSelfContained);SatelliteResourceLanguages=$(SatelliteResourceLanguages);DebugType=$(DebugType);DebugSymbols=$(DebugSymbols);PublishSingleFile=false;PublishReadyToRun=$(PublishReadyToRun);PublishTrimmed=$(PublishTrimmed);DeleteExistingFiles=true</UiPublishProperties>
     </PropertyGroup>
 
     <RemoveDir Directories="$(UiPublishDirectory)" />
     <MakeDir Directories="$(UiPublishDirectory)" />
+    <MSBuild Projects="$(UiProject)" Targets="Restore" Properties="$(UiPublishProperties)" />
     <MSBuild Projects="$(UiProject)" Targets="Publish" Properties="$(UiPublishProperties)" />
 
     <ItemGroup>
@@ -51,7 +61,7 @@
     </ItemGroup>
     <Copy
       SourceFiles="@(UiPublishedFile)"
-      DestinationFiles="@(UiPublishedFile->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+      DestinationFiles="@(UiPublishedFile->'$(PublishDir)App\%(RecursiveDir)%(Filename)%(Extension)')"
       SkipUnchangedFiles="true"
     />
     <ItemGroup>
@@ -65,58 +75,19 @@
   <!-- 精简 Windows App SDK 发布负载：只保留简体中文资源并移除未使用的重启代理。 -->
   <Target Name="PruneUnusedWindowsAppSdkPublishAssets" AfterTargets="PublishUiToCombinedDirectory">
     <ItemGroup>
-      <NonChineseMuiFile Include="$(PublishDir)**\*.mui" Exclude="$(PublishDir)zh-CN\**\*.mui" />
+      <NonChineseMuiFile
+        Include="$(PublishDir)App\**\*.mui"
+        Exclude="$(PublishDir)App\zh-CN\**\*.mui"
+      />
       <NonChineseMuiDirectory Include="@(NonChineseMuiFile->'%(RootDir)%(Directory)')" />
     </ItemGroup>
     <RemoveDir Directories="@(NonChineseMuiDirectory)" />
-    <Delete Files="$(PublishDir)RestartAgent.exe" />
-  </Target>
-
-  <!-- 根目录只保留入口 EXE，其余 Host、UI 和运行时文件放入 App 子目录。 -->
-  <Target
-    Name="ArrangePublishedApplicationLayout"
-    AfterTargets="PruneUnusedWindowsAppSdkPublishAssets"
-  >
-    <PropertyGroup>
-      <PublishLayoutRoot>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::GetFullPath('$(PublishDir)'))))</PublishLayoutRoot>
-      <PublishedAppDirectory>$(PublishLayoutRoot)App\</PublishedAppDirectory>
-    </PropertyGroup>
-    <RemoveDir Directories="$(PublishedAppDirectory)" />
-    <MakeDir Directories="$(PublishedAppDirectory)" />
-    <ItemGroup>
-      <PublishedApplicationFile
-        Include="$(PublishLayoutRoot)**\*"
-        Exclude="$(PublishLayoutRoot)$(AssemblyName).exe;$(PublishedAppDirectory)**\*"
-      />
-      <PublishedApplicationDirectory
-        Include="@(PublishedApplicationFile->'%(RootDir)%(Directory)')"
-        Exclude="$(PublishLayoutRoot);$(PublishedAppDirectory)"
-      />
-    </ItemGroup>
-    <Move
-      SourceFiles="@(PublishedApplicationFile)"
-      DestinationFiles="@(PublishedApplicationFile->'$(PublishedAppDirectory)%(RecursiveDir)%(Filename)%(Extension)')"
-    />
-    <RemoveDir Directories="@(PublishedApplicationDirectory)" />
-    <RemoveDir Directories="$(PublishLayoutRoot)Microsoft.UI.Xaml" />
-    <CreateAppHost
-      AppHostSourcePath="$(AppHostSourcePath)"
-      AppHostDestinationPath="$(PublishLayoutRoot)$(AssemblyName).exe"
-      AppBinaryName="App\$(AssemblyName)$(TargetExt)"
-      IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"
-      WindowsGraphicalUserInterface="$(_UseWindowsGraphicalUserInterface)"
-      Retries="$(CopyRetryCount)"
-      RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
-      DisableCetCompat="$(_DisableCetCompat)"
-      DotNetSearchLocations="AppRelative;Global"
-      AppRelativeDotNet="App"
-    />
-    <Message Importance="high" Text="Arranged application files under: $(PublishedAppDirectory)" />
+    <Delete Files="$(PublishDir)App\RestartAgent.exe" />
   </Target>
 
   <Target
     Name="CreateSevenZipArchive"
-    AfterTargets="ArrangePublishedApplicationLayout"
+    AfterTargets="PruneUnusedWindowsAppSdkPublishAssets"
     Condition="'$(CreateSevenZipArchive)' == 'true'"
   >
     <PropertyGroup>

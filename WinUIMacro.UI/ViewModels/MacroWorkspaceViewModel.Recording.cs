@@ -31,6 +31,7 @@ internal partial class MacroWorkspaceViewModel
         OnPropertyChanged(nameof(RecordButtonLabel));
         OnPropertyChanged(nameof(RecordButtonGlyph));
         OnPropertyChanged(nameof(CanEditSequence));
+        NotifySelectedMacroCommandAvailability();
     }
 
     internal async Task ToggleRecordingAsync(DesktopRectangle stopBounds)

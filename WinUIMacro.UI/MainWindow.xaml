@@ -13,7 +13,6 @@
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
@@ -118,13 +117,13 @@
           Icon="Copy"
           Label="复制"
           Command="{x:Bind ViewModel.CopyMacroCommand}"
-          IsEnabled="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
+          IsEnabled="{x:Bind ViewModel.CanCopySelectedMacro, Mode=OneWay}"
         />
         <AppBarButton
           Icon="Save"
           Label="保存"
           Command="{x:Bind ViewModel.SaveMacroCommand}"
-          IsEnabled="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
+          IsEnabled="{x:Bind ViewModel.CanSaveSelectedMacro, Mode=OneWay}"
         />
         <AppBarButton
           x:Name="RecordButton"
@@ -152,24 +151,15 @@
       </CommandBar>
     </Grid>
 
-    <InfoBar
-      Grid.Row="2"
-      Margin="16,0,16,8"
-      IsClosable="True"
-      IsOpen="{x:Bind IsElevated, Mode=OneTime}"
-      Message="当前以管理员权限运行，宏节点因为上游 bug 无法拖拽。"
-      Severity="Warning"
-    />
-
     <ContentControl
       x:Name="ContentHost"
-      Grid.Row="3"
+      Grid.Row="2"
       HorizontalContentAlignment="Stretch"
       VerticalContentAlignment="Stretch"
     />
 
     <InfoBar
-      Grid.RowSpan="4"
+      Grid.RowSpan="3"
       Margin="16"
       MaxWidth="760"
       HorizontalAlignment="Right"

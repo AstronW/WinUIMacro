@@ -17,7 +17,12 @@ internal sealed class HostApplication(IpcEndpointNames names, bool engineIsEleva
     private readonly SemaphoreSlim _exitLock = new(1, 1);
     private readonly CancellationTokenSource _shutdownCancellation = new();
     private readonly object _uiLaunchLock = new();
-    private readonly string _uiPath = Path.Combine(AppContext.BaseDirectory, "WinUIMacro.UI.exe");
+    private readonly string _uiDirectory = Path.Combine(AppContext.BaseDirectory, "App");
+    private readonly string _uiPath = Path.Combine(
+        AppContext.BaseDirectory,
+        "App",
+        "WinUIMacro.UI.exe"
+    );
     private readonly string _uiPipeName = $"{names.UiPipe}.{Guid.NewGuid():N}";
     private EngineWorkspace? _workspace;
     private EnginePipeServer? _uiPipe;
@@ -123,7 +128,9 @@ internal sealed class HostApplication(IpcEndpointNames names, bool engineIsEleva
                 registrationPipeName,
                 registrationToken,
                 _uiPath,
-                connectionTimeout.Token
+                connectionTimeout.Token,
+                // 普通桌面仍只接受 Medium UI；Sandbox 等提升桌面允许与提升 Engine 同级的 UI。
+                rejectElevatedClient: !engineIsElevated
             );
             var arguments = string.Join(
                 ' ',
@@ -137,7 +144,7 @@ internal sealed class HostApplication(IpcEndpointNames names, bool engineIsEleva
             await ExplorerShellLauncher.LaunchAsync(
                 _uiPath,
                 arguments,
-                AppContext.BaseDirectory,
+                _uiDirectory,
                 connectionTimeout.Token
             );
 

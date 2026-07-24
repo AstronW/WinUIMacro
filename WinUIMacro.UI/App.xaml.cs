@@ -1,7 +1,6 @@
 // 创建 UI 进程、连接引擎会话并处理应用级生命周期。
 using Microsoft.UI.Dispatching;
 using WinUIMacro.Contracts.Ipc;
-using WinUIMacro.Engine.Win32.Security;
 using WinUIMacro.Engine.Win32.Window;
 using WinUIMacro.UI.Services;
 
@@ -25,7 +24,6 @@ public sealed partial class App : Application
     {
         try
         {
-            var isElevated = ProcessSecurity.IsCurrentProcessElevated();
             var arguments = Environment.GetCommandLineArgs();
             var enginePipeName = GetRequiredArgument(arguments, Protocol.EnginePipeArgument);
             var registrationPipeName = GetRequiredArgument(
@@ -62,7 +60,7 @@ public sealed partial class App : Application
             _viewModel = new MacroWorkspaceViewModel(_client, _dispatcherQueue);
             await _viewModel.InitializeAsync();
 
-            var window = new MainWindow(_viewModel, isElevated);
+            var window = new MainWindow(_viewModel);
             window.Closed += OnWindowClosed;
             _window = window;
             window.Activate();

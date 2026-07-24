@@ -40,14 +40,25 @@
 
   <Target Name="CopyWinUIAssetsToPublishDirectory" AfterTargets="Publish">
     <ItemGroup>
-      <WinUIPublishPri Include="$(TargetDir)$(AssemblyName).pri" Condition="Exists('$(TargetDir)$(AssemblyName).pri')" />
+      <WinUIPublishPri
+        Include="$(TargetDir)$(AssemblyName).pri"
+        Condition="Exists('$(TargetDir)$(AssemblyName).pri')"
+      />
       <WinUIPublishXbf Include="@(ApplicationDefinition);@(Page)">
         <XbfSourcePath>$(TargetDir)%(RelativeDir)%(Filename).xbf</XbfSourcePath>
         <XbfDestinationPath>$(PublishDir)%(RelativeDir)%(Filename).xbf</XbfDestinationPath>
       </WinUIPublishXbf>
     </ItemGroup>
     <RemoveDir Directories="$(PublishDir)Views" />
-    <Copy SourceFiles="@(WinUIPublishPri)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(WinUIPublishXbf->'%(XbfSourcePath)')" DestinationFiles="@(WinUIPublishXbf->'%(XbfDestinationPath)')" SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(WinUIPublishPri)"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true"
+    />
+    <Copy
+      SourceFiles="@(WinUIPublishXbf->'%(XbfSourcePath)')"
+      DestinationFiles="@(WinUIPublishXbf->'%(XbfDestinationPath)')"
+      SkipUnchangedFiles="true"
+    />
   </Target>
 </Project>

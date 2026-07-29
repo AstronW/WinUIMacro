@@ -25,8 +25,8 @@ WinUIMacro 是一款面向 Windows 的轻量级键鼠宏工具，可以录制、
 
 | 发布包 | 文件名 | 运行时要求 |
 | --- | --- | --- |
-| 非自包含版 | `WinUIMacro-1.0.0-win-x64.7z` | 需要安装 [.NET 10 Desktop Runtime（x64）](https://dotnet.microsoft.com/zh-cn/download/dotnet/10.0) 和 [Windows App Runtime 2.2（x64）](https://learn.microsoft.com/zh-cn/windows/apps/windows-app-sdk/downloads) |
-| 自包含版 | `WinUIMacro-1.0.0-win-x64-self-contained.7z` | 已包含所需的 .NET 和 Windows App SDK 运行时，体积较大 |
+| 非自包含版 | `WinUIMacro-1.1.1-win-x64.7z` | 需要安装 [.NET 10 Desktop Runtime（x64）](https://dotnet.microsoft.com/zh-cn/download/dotnet/10.0)；已包含 Windows App SDK 运行时 |
+| 自包含版 | `WinUIMacro-1.1.1-win-x64-self-contained.7z` | 已包含所需的 .NET 和 Windows App SDK 运行时，体积较大 |
 
 ### 安装与启动
 
@@ -131,8 +131,8 @@ dotnet test WinUIMacro.Tests\WinUIMacro.Tests.csproj -p:Platform=x64
 
 | 发布配置 | 部署方式 | 发布目录 | 压缩包 |
 | --- | --- | --- | --- |
-| `win-x64` | 非自包含 | `artifacts\publish\WinUIMacro` | `WinUIMacro-1.0.0-win-x64.7z` |
-| `win-x64-self-contained` | 自包含 | `artifacts\publish-self-contained\WinUIMacro` | `WinUIMacro-1.0.0-win-x64-self-contained.7z` |
+| `win-x64` | 非自包含 | `artifacts\publish\WinUIMacro` | `WinUIMacro-1.1.1-win-x64.7z` |
+| `win-x64-self-contained` | 自包含 | `artifacts\publish-self-contained\WinUIMacro` | `WinUIMacro-1.1.1-win-x64-self-contained.7z` |
 
 生成非自包含发布包：
 

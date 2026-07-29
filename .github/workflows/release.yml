@@ -139,7 +139,7 @@ jobs:
           $notes = @"
           ## 下载说明
 
-          - ``WinUIMacro-$env:VERSION-win-x64.7z``：非自包含版，需要安装 .NET Desktop Runtime 和 Windows App Runtime。
+          - ``WinUIMacro-$env:VERSION-win-x64.7z``：非自包含版，需要安装 .NET Desktop Runtime；已包含 Windows App SDK 运行时。
           - ``WinUIMacro-$env:VERSION-win-x64-self-contained.7z``：自包含版，已经包含所需运行时，文件体积较大。
           "@
 

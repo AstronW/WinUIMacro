@@ -17,9 +17,9 @@
     <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <!-- Host 是合并发布的唯一入口；默认使用框架依赖的 x64 配置。 -->
     <PublishProfile>win-x64</PublishProfile>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,7 +45,7 @@
     <PropertyGroup>
       <UiProject>$(MSBuildProjectDirectory)\..\WinUIMacro.UI\WinUIMacro.UI.csproj</UiProject>
       <UiPublishDirectory>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)ui-publish\', '$(MSBuildProjectDirectory)'))</UiPublishDirectory>
-      <UiPublishProperties>Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);PublishProfile=$(UiPublishProfile);PublishDir=$(UiPublishDirectory);SelfContained=$(SelfContained);WindowsAppSDKSelfContained=$(WindowsAppSDKSelfContained);SatelliteResourceLanguages=$(SatelliteResourceLanguages);DebugType=$(DebugType);DebugSymbols=$(DebugSymbols);PublishSingleFile=false;PublishReadyToRun=$(PublishReadyToRun);PublishTrimmed=$(PublishTrimmed);DeleteExistingFiles=true</UiPublishProperties>
+      <UiPublishProperties>Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);PublishProfile=$(UiPublishProfile);PublishDir=$(UiPublishDirectory);SelfContained=$(SelfContained);WindowsAppSDKSelfContained=$(WindowsAppSDKSelfContained);SatelliteResourceLanguages=$(SatelliteResourceLanguages);Version=$(Version);AssemblyVersion=$(AssemblyVersion);FileVersion=$(FileVersion);DebugType=$(DebugType);DebugSymbols=$(DebugSymbols);PublishSingleFile=false;PublishReadyToRun=$(PublishReadyToRun);PublishTrimmed=$(PublishTrimmed);DeleteExistingFiles=true</UiPublishProperties>
     </PropertyGroup>
 
     <RemoveDir Directories="$(UiPublishDirectory)" />

@@ -1,4 +1,5 @@
 // 验证节点编辑缓冲提交后会同步宏值和脏状态。
+using System.Collections.Specialized;
 using FluentAssertions;
 using WinUIMacro.Contracts;
 using WinUIMacro.UI.ViewModels;
@@ -93,6 +94,47 @@ public sealed class MacroEditorViewModelTests
 
         macro.Nodes.Select(node => node.Value).Should().Equal("A", "C", "E", "F", "B", "D");
         macro.Nodes.Skip(4).Should().Equal(movedNodes.Reverse());
+    }
+
+    [TestMethod]
+    public void MoveNodeRange_Backward_MovesOnlyOverlappedNodes()
+    {
+        var macro = CreatePersistedMacro("A", "B", "C", "D", "E", "F");
+        var moves = 0;
+        macro.Nodes.CollectionChanged += (_, args) =>
+        {
+            args.Action.Should().Be(NotifyCollectionChangedAction.Move);
+            moves++;
+        };
+
+        macro.MoveNodeRange(3, 2, 1);
+
+        macro.Nodes.Select(node => node.Value).Should().Equal("A", "D", "E", "B", "C", "F");
+        moves.Should().Be(2);
+    }
+
+    [TestMethod]
+    public void MoveNodeRange_Forward_KeepsGroupOrder()
+    {
+        var macro = CreatePersistedMacro("A", "B", "C", "D", "E", "F");
+
+        macro.MoveNodeRange(0, 2, 4);
+
+        macro.Nodes.Select(node => node.Value).Should().Equal("C", "D", "E", "F", "A", "B");
+    }
+
+    [TestMethod]
+    public void ApplyNodeOrder_RestoresOriginalOrderWithMovesOnly()
+    {
+        var macro = CreatePersistedMacro("A", "B", "C", "D", "E");
+        var original = macro.Nodes.ToArray();
+        macro.MoveNodes([macro.Nodes[0], macro.Nodes[3]], 2);
+        macro.Nodes.CollectionChanged += (_, args) =>
+            args.Action.Should().Be(NotifyCollectionChangedAction.Move);
+
+        macro.ApplyNodeOrder(original);
+
+        macro.Nodes.Should().Equal(original);
     }
 
     private static MacroEditorViewModel CreatePersistedMacro() => CreatePersistedMacro("原备注");

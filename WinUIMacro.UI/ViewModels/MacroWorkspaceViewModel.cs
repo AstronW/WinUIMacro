@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Microsoft.UI.Dispatching;
 using WinUIMacro.Contracts.Ipc;
 using WinUIMacro.UI.Services;
@@ -24,10 +25,13 @@ internal partial class MacroWorkspaceViewModel : ObservableObject, IDisposable
         _client.RecordingStateChanged += Engine_RecordingStateChanged;
         _client.PlaybackFailed += Engine_PlaybackFailed;
         _client.ProcessingFailed += Engine_ProcessingFailed;
+        Macros.CollectionChanged += Macros_CollectionChanged;
         BuildBindingKeys();
     }
 
     public ObservableCollection<MacroEditorViewModel> Macros { get; } = [];
+
+    public bool HasNoMacros => Macros.Count == 0;
 
     [ObservableProperty]
     public partial string Message { get; set; } = string.Empty;
@@ -49,7 +53,11 @@ internal partial class MacroWorkspaceViewModel : ObservableObject, IDisposable
         _client.RecordingStateChanged -= Engine_RecordingStateChanged;
         _client.PlaybackFailed -= Engine_PlaybackFailed;
         _client.ProcessingFailed -= Engine_ProcessingFailed;
+        Macros.CollectionChanged -= Macros_CollectionChanged;
     }
+
+    private void Macros_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        OnPropertyChanged(nameof(HasNoMacros));
 
     private void Engine_PlaybackFailed(RuntimeFailureEvent args) =>
         Dispatch(() => ShowError($"回放“{args.MacroName}”失败：{args.Message}"));

@@ -7,9 +7,35 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:vm="using:WinUIMacro.UI.ViewModels"
 >
-  <Grid Padding="22">
+  <Grid Padding="16,8,16,0">
+    <StackPanel
+      Margin="0,0,0,48"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Spacing="8"
+      IsHitTestVisible="False"
+      Visibility="{x:Bind Macro.HasNoNodes, Mode=OneWay}"
+    >
+      <FontIcon
+        Glyph="&#xE7C8;"
+        FontSize="40"
+        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+      />
+      <TextBlock
+        HorizontalAlignment="Center"
+        FontSize="16"
+        FontWeight="SemiBold"
+        Text="序列为空"
+      />
+      <TextBlock
+        HorizontalAlignment="Center"
+        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+        Text="点击“开始录制”记录键鼠操作，或手动添加延迟与注释"
+      />
+    </StackPanel>
     <GridView
       x:Name="NodeGrid"
+      Padding="0,0,0,12"
       ItemsSource="{x:Bind Macro.Nodes, Mode=OneWay}"
       AllowDrop="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
       CanDragItems="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
@@ -31,7 +57,7 @@
         <Style TargetType="GridViewItem">
           <Setter Property="Width" Value="96" />
           <Setter Property="Height" Value="96" />
-          <Setter Property="Margin" Value="0,0,8,8" />
+          <Setter Property="Margin" Value="0,0,6,6" />
           <Setter Property="HorizontalContentAlignment" Value="Stretch" />
           <Setter Property="VerticalContentAlignment" Value="Stretch" />
         </Style>

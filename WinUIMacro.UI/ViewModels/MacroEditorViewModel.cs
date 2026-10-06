@@ -57,6 +57,7 @@ internal partial class MacroEditorViewModel : ObservableObject
         && Nodes.Count == 0
         && string.Equals(Name, _initialName, StringComparison.Ordinal)
         && ModeIndex == (int)MacroPlaybackMode.Once;
+    public bool HasNoNodes => Nodes.Count == 0;
     public string DisplayName => string.IsNullOrWhiteSpace(Name) ? "未命名宏" : Name;
     public string TotalDurationDisplay =>
         MacroValueFormatter.FormatDuration(_totalDelayMilliseconds);
@@ -266,6 +267,7 @@ internal partial class MacroEditorViewModel : ObservableObject
             IsDirty = true;
         if (_totalDelayMilliseconds != previousTotal)
             OnPropertyChanged(nameof(TotalDurationDisplay));
+        OnPropertyChanged(nameof(HasNoNodes));
     }
 
     private void Node_PropertyChanged(object? sender, PropertyChangedEventArgs args)

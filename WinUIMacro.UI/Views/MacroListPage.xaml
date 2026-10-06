@@ -7,50 +7,63 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:vm="using:WinUIMacro.UI.ViewModels"
 >
-  <Grid Padding="24" RowSpacing="18">
+  <Grid Padding="20,12,20,0" RowSpacing="12">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
-    <Grid ColumnSpacing="16">
+    <Grid ColumnSpacing="4">
       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <TextBlock Text="宏列表" FontSize="24" FontWeight="SemiBold" />
-      <StackPanel
-        Grid.Column="1"
-        HorizontalAlignment="Right"
-        VerticalAlignment="Bottom"
-        Orientation="Horizontal"
-        Spacing="8"
+      <Button
+        Style="{ThemeResource AccentButtonStyle}"
+        Click="AddMacro_Click"
+        IsEnabled="{x:Bind ViewModel.CanChangeWorkspace, Mode=OneWay}"
       >
-        <Button Command="{x:Bind ViewModel.OpenMacroFolderCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <SymbolIcon Symbol="OpenFile" />
-            <TextBlock Text="打开文件夹" />
-          </StackPanel>
-        </Button>
-        <Button Command="{x:Bind ViewModel.RefreshMacrosCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <SymbolIcon Symbol="Refresh" />
-            <TextBlock Text="刷新" />
-          </StackPanel>
-        </Button>
-        <Button
-          Click="AddMacro_Click"
-          IsEnabled="{x:Bind ViewModel.CanChangeWorkspace, Mode=OneWay}"
-        >
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <SymbolIcon Symbol="Add" />
-            <TextBlock Text="新建宏" />
-          </StackPanel>
-        </Button>
-      </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <FontIcon Glyph="&#xE710;" FontSize="14" />
+          <TextBlock Text="新建宏" />
+        </StackPanel>
+        <Button.KeyboardAccelerators>
+          <KeyboardAccelerator Modifiers="Control" Key="N" />
+        </Button.KeyboardAccelerators>
+      </Button>
+      <Button
+        Grid.Column="2"
+        Width="36"
+        Height="32"
+        Padding="0"
+        Background="Transparent"
+        BorderBrush="Transparent"
+        Command="{x:Bind ViewModel.RefreshMacrosCommand}"
+        ToolTipService.ToolTip="刷新"
+      >
+        <FontIcon Glyph="&#xE72C;" FontSize="14" />
+        <Button.KeyboardAccelerators>
+          <KeyboardAccelerator Key="F5" />
+        </Button.KeyboardAccelerators>
+      </Button>
+      <Button
+        Grid.Column="3"
+        Width="36"
+        Height="32"
+        Padding="0"
+        Background="Transparent"
+        BorderBrush="Transparent"
+        Command="{x:Bind ViewModel.OpenMacroFolderCommand}"
+        ToolTipService.ToolTip="打开宏文件夹"
+      >
+        <FontIcon Glyph="&#xE838;" FontSize="14" />
+      </Button>
     </Grid>
     <GridView
       x:Name="MacroGrid"
       Grid.Row="1"
+      Padding="0,0,0,12"
       ItemsSource="{x:Bind ViewModel.Macros, Mode=OneWay}"
       SelectionMode="None"
       IsItemClickEnabled="True"
@@ -59,46 +72,89 @@
     >
       <GridView.ItemContainerStyle>
         <Style TargetType="GridViewItem">
-          <Setter Property="Width" Value="260" />
-          <Setter Property="MaxWidth" Value="260" />
-          <Setter Property="MinHeight" Value="76" />
-          <Setter Property="Margin" Value="0,0,12,12" />
+          <Setter Property="Width" Value="240" />
+          <Setter Property="Height" Value="64" />
+          <Setter Property="Margin" Value="0,0,8,8" />
           <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+          <Setter Property="VerticalContentAlignment" Value="Stretch" />
         </Style>
       </GridView.ItemContainerStyle>
       <GridView.ItemTemplate>
         <DataTemplate x:DataType="vm:MacroEditorViewModel">
           <Border
-            MinHeight="76"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
-            CornerRadius="8"
+            CornerRadius="{ThemeResource OverlayCornerRadius}"
           >
             <Grid>
               <Border
                 Background="{ThemeResource AccentFillColorDefaultBrush}"
-                CornerRadius="8"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
                 Opacity="{x:Bind BoundBackgroundOpacity, Mode=OneWay}"
               />
-              <StackPanel Margin="12" VerticalAlignment="Center" Spacing="6">
-                <TextBlock
-                  FontWeight="SemiBold"
-                  Text="{x:Bind DisplayName, Mode=OneWay}"
-                  TextAlignment="Center"
-                  TextTrimming="CharacterEllipsis"
-                />
-                <TextBlock
-                  Text="{x:Bind BindingSummary, Mode=OneWay}"
-                  TextAlignment="Center"
-                  Opacity="0.7"
-                  TextTrimming="CharacterEllipsis"
-                />
-              </StackPanel>
+              <Grid Padding="12,0" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border
+                  Width="36"
+                  Height="36"
+                  VerticalAlignment="Center"
+                  Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                  CornerRadius="{ThemeResource ControlCornerRadius}"
+                >
+                  <FontIcon
+                    Glyph="&#xE945;"
+                    FontSize="16"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                  />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                  <TextBlock
+                    FontWeight="SemiBold"
+                    Text="{x:Bind DisplayName, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                  />
+                  <TextBlock
+                    FontSize="12"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind BindingSummary, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                  />
+                </StackPanel>
+              </Grid>
             </Grid>
           </Border>
         </DataTemplate>
       </GridView.ItemTemplate>
     </GridView>
+    <StackPanel
+      Grid.Row="1"
+      Margin="0,0,0,48"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Spacing="8"
+      IsHitTestVisible="False"
+      Visibility="{x:Bind ViewModel.HasNoMacros, Mode=OneWay}"
+    >
+      <FontIcon
+        Glyph="&#xE945;"
+        FontSize="40"
+        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+      />
+      <TextBlock
+        HorizontalAlignment="Center"
+        FontSize="16"
+        FontWeight="SemiBold"
+        Text="还没有宏"
+      />
+      <TextBlock
+        HorizontalAlignment="Center"
+        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+        Text="点击“新建宏”录制第一组键鼠操作"
+      />
+    </StackPanel>
   </Grid>
 </Page>

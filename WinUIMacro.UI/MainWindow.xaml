@@ -21,85 +21,98 @@
     <SelectorBar
       x:Name="RootSelectorBar"
       Grid.Row="1"
-      Margin="20,0,20,4"
+      Margin="16,0,16,0"
       IsEnabled="{x:Bind ViewModel.CanChangeWorkspace, Mode=OneWay}"
       SelectionChanged="RootSelectorBar_SelectionChanged"
     >
-      <SelectorBarItem x:Name="MacroListSelectorItem" Text="宏列表" Tag="Macros" />
-      <SelectorBarItem x:Name="BindingsSelectorItem" Text="触发键绑定" Tag="Bindings" />
+      <SelectorBarItem x:Name="MacroListSelectorItem" Text="宏列表" Tag="Macros">
+        <SelectorBarItem.Icon>
+          <FontIcon Glyph="&#xE8FD;" />
+        </SelectorBarItem.Icon>
+      </SelectorBarItem>
+      <SelectorBarItem x:Name="BindingsSelectorItem" Text="触发键绑定" Tag="Bindings">
+        <SelectorBarItem.Icon>
+          <FontIcon Glyph="&#xE765;" />
+        </SelectorBarItem.Icon>
+      </SelectorBarItem>
     </SelectorBar>
 
     <Grid
       x:Name="BackBar"
       Grid.Row="1"
       Visibility="Collapsed"
-      MinHeight="56"
-      Padding="12,4,16,6"
-      RowSpacing="2"
+      MinHeight="48"
+      Padding="12,0,8,0"
+      ColumnSpacing="8"
       DataContext="{x:Bind ViewModel.SelectedMacro, Mode=OneWay}"
     >
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="Auto" />
-      </Grid.RowDefinitions>
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="16" />
-        <ColumnDefinition Width="120" />
-        <ColumnDefinition Width="12" />
-        <ColumnDefinition Width="60" />
-        <ColumnDefinition Width="8" />
-        <ColumnDefinition Width="88" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
       <Button
-        Grid.Row="1"
-        Width="40"
-        Height="40"
-        HorizontalAlignment="Left"
+        Width="36"
+        Height="32"
+        Padding="0"
         VerticalAlignment="Center"
+        Background="Transparent"
+        BorderBrush="Transparent"
         Click="BackButton_Click"
         IsEnabled="{x:Bind ViewModel.CanChangeWorkspace, Mode=OneWay}"
+        ToolTipService.ToolTip="返回宏列表"
       >
-        <SymbolIcon Symbol="Back" />
+        <FontIcon Glyph="&#xE72B;" FontSize="14" />
       </Button>
-      <TextBlock Grid.Column="2" Text="名称" FontSize="12" Opacity="0.7" />
-      <TextBlock Grid.Column="4" Text="总延迟" FontSize="12" Opacity="0.7" />
-      <TextBlock Grid.Column="6" Text="运行方式" FontSize="12" Opacity="0.7" />
       <TextBox
-        Grid.Row="1"
-        Grid.Column="2"
-        Width="120"
-        Height="32"
+        Grid.Column="1"
+        Width="200"
         VerticalAlignment="Center"
         AcceptsReturn="False"
         MaxLength="64"
+        PlaceholderText="宏名称"
         TextWrapping="NoWrap"
+        ToolTipService.ToolTip="宏名称"
         Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
       />
-      <TextBlock
-        Grid.Row="1"
-        Grid.Column="4"
-        VerticalAlignment="Center"
-        Text="{Binding TotalDurationDisplay}"
-        FontWeight="SemiBold"
-      />
       <ComboBox
-        Grid.Row="1"
-        Grid.Column="6"
-        Width="88"
-        Height="32"
+        Grid.Column="2"
+        MinWidth="88"
         VerticalAlignment="Center"
+        ToolTipService.ToolTip="运行方式"
         SelectedIndex="{Binding ModeIndex, Mode=TwoWay}"
       >
         <ComboBoxItem Content="一次" />
         <ComboBoxItem Content="切换" />
         <ComboBoxItem Content="按住" />
       </ComboBox>
+      <Border
+        Grid.Column="3"
+        Height="32"
+        Padding="10,0"
+        VerticalAlignment="Center"
+        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+        CornerRadius="{ThemeResource ControlCornerRadius}"
+        ToolTipService.ToolTip="总延迟"
+      >
+        <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+          <FontIcon
+            Glyph="&#xE916;"
+            FontSize="14"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+          />
+          <TextBlock
+            VerticalAlignment="Center"
+            Text="{Binding TotalDurationDisplay}"
+            FontWeight="SemiBold"
+          />
+        </StackPanel>
+      </Border>
       <CommandBar
-        Grid.Row="1"
-        Grid.Column="8"
+        Grid.Column="5"
         HorizontalAlignment="Right"
         VerticalAlignment="Center"
         Background="Transparent"
@@ -107,24 +120,6 @@
         IsDynamicOverflowEnabled="False"
         IsEnabled="{x:Bind ViewModel.CanChangeWorkspace, Mode=OneWay}"
       >
-        <AppBarButton
-          Icon="Delete"
-          Label="删除"
-          Click="DeleteMacro_Click"
-          IsEnabled="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
-        />
-        <AppBarButton
-          Icon="Copy"
-          Label="复制"
-          Command="{x:Bind ViewModel.CopyMacroCommand}"
-          IsEnabled="{x:Bind ViewModel.CanCopySelectedMacro, Mode=OneWay}"
-        />
-        <AppBarButton
-          Icon="Save"
-          Label="保存"
-          Command="{x:Bind ViewModel.SaveMacroCommand}"
-          IsEnabled="{x:Bind ViewModel.CanSaveSelectedMacro, Mode=OneWay}"
-        />
         <AppBarButton
           x:Name="RecordButton"
           Label="{x:Bind ViewModel.RecordButtonLabel, Mode=OneWay}"
@@ -135,7 +130,6 @@
             <FontIcon Glyph="{x:Bind ViewModel.RecordButtonGlyph, Mode=OneWay}" />
           </AppBarButton.Icon>
         </AppBarButton>
-        <AppBarSeparator />
         <AppBarButton
           Icon="Clock"
           Label="延迟"
@@ -148,6 +142,31 @@
           Command="{x:Bind ViewModel.AddNoteCommand}"
           IsEnabled="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
         />
+        <AppBarSeparator />
+        <AppBarButton
+          Icon="Save"
+          Label="保存"
+          Command="{x:Bind ViewModel.SaveMacroCommand}"
+          IsEnabled="{x:Bind ViewModel.CanSaveSelectedMacro, Mode=OneWay}"
+        >
+          <AppBarButton.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="S" />
+          </AppBarButton.KeyboardAccelerators>
+        </AppBarButton>
+        <CommandBar.SecondaryCommands>
+          <AppBarButton
+            Icon="Copy"
+            Label="复制宏"
+            Command="{x:Bind ViewModel.CopyMacroCommand}"
+            IsEnabled="{x:Bind ViewModel.CanCopySelectedMacro, Mode=OneWay}"
+          />
+          <AppBarButton
+            Icon="Delete"
+            Label="删除宏"
+            Click="DeleteMacro_Click"
+            IsEnabled="{x:Bind ViewModel.CanEditSequence, Mode=OneWay}"
+          />
+        </CommandBar.SecondaryCommands>
       </CommandBar>
     </Grid>
 
@@ -156,12 +175,18 @@
       Grid.Row="2"
       HorizontalContentAlignment="Stretch"
       VerticalContentAlignment="Stretch"
-    />
+    >
+      <ContentControl.ContentTransitions>
+        <TransitionCollection>
+          <ContentThemeTransition VerticalOffset="16" />
+        </TransitionCollection>
+      </ContentControl.ContentTransitions>
+    </ContentControl>
 
     <InfoBar
       Grid.RowSpan="3"
       Margin="16"
-      MaxWidth="760"
+      MaxWidth="640"
       HorizontalAlignment="Right"
       VerticalAlignment="Bottom"
       IsClosable="True"
@@ -169,7 +194,7 @@
       Severity="{x:Bind ViewModel.MessageSeverity, Mode=OneWay}"
     >
       <TextBlock
-        MaxWidth="680"
+        MaxWidth="560"
         IsTextSelectionEnabled="True"
         Text="{x:Bind ViewModel.Message, Mode=OneWay}"
         TextWrapping="Wrap"

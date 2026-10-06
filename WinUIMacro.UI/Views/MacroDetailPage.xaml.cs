@@ -1,4 +1,4 @@
-// 管理宏详情页的节点列表绑定、选择和编辑交互；拖拽排序见 MacroDetailPage.NodeDrag.cs。
+// 管理宏详情页的节点列表绑定、拖拽排序和编辑交互。
 using System.Collections.Specialized;
 using System.ComponentModel;
 using Microsoft.UI.Input;
@@ -13,13 +13,15 @@ namespace WinUIMacro.UI.Views;
 public sealed partial class MacroDetailPage : Page, IDisposable
 {
     private readonly TransitionCollection? _defaultItemContainerTransitions;
+    private readonly Dictionary<UIElement, double> _hiddenDraggedElements = [];
+    private MacroNodeViewModel[] _draggedNodes = [];
+    private MacroNodeViewModel? _pointerDragNode;
     private bool _scrollPending;
 
     public MacroDetailPage()
     {
         InitializeComponent();
         _defaultItemContainerTransitions = NodeGrid.ItemContainerTransitions;
-        InitializeNodeDrag();
     }
 
     internal MacroWorkspaceViewModel ViewModel { get; private set; } = null!;
@@ -45,7 +47,7 @@ public sealed partial class MacroDetailPage : Page, IDisposable
 
     public void Dispose()
     {
-        DisposeNodeDrag();
+        RestoreHiddenDraggedElements();
         if (ViewModel is not null)
             ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
         if (Macro is not null)
@@ -61,7 +63,7 @@ public sealed partial class MacroDetailPage : Page, IDisposable
 
     private void NodeGrid_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (HandleNodeDragKeyDown(e) || FocusManager.GetFocusedElement(XamlRoot) is TextBox)
+        if (FocusManager.GetFocusedElement(XamlRoot) is TextBox)
             return;
 
         var controlDown = IsKeyDown(VirtualKey.Control);
@@ -181,6 +183,42 @@ public sealed partial class MacroDetailPage : Page, IDisposable
             NodeGrid.SelectedItems.Add(node);
     }
 
+    private void NodeGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        var container = FindAncestor<GridViewItem>(e.OriginalSource as DependencyObject);
+        _pointerDragNode = container is null
+            ? null
+            : NodeGrid.ItemFromContainer(container) as MacroNodeViewModel;
+    }
+
+    private void NodeGrid_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
+    {
+        if (!ViewModel.CanEditSequence)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        _draggedNodes = e
+            .Items.OfType<MacroNodeViewModel>()
+            .Distinct()
+            .OrderBy(Macro.Nodes.IndexOf)
+            .ToArray();
+        if (_draggedNodes.Length == 0 && _pointerDragNode is not null)
+            _draggedNodes = [_pointerDragNode];
+        SelectNodes(_draggedNodes);
+        HideSecondaryDraggedElements();
+    }
+
+    private void NodeGrid_DragItemsCompleted(object sender, DragItemsCompletedEventArgs e)
+    {
+        RestoreHiddenDraggedElements();
+        if (_draggedNodes.Length > 0)
+            SelectNodes(_draggedNodes);
+        _draggedNodes = [];
+        _pointerDragNode = null;
+    }
+
     private void NodeGrid_Tapped(object sender, TappedRoutedEventArgs e)
     {
         if (FindAncestor<GridViewItem>(e.OriginalSource as DependencyObject) is null)
@@ -188,6 +226,28 @@ public sealed partial class MacroDetailPage : Page, IDisposable
             NodeGrid.SelectedItems.Clear();
             NodeGrid.Focus(FocusState.Pointer);
         }
+    }
+
+    private void HideSecondaryDraggedElements()
+    {
+        RestoreHiddenDraggedElements();
+        foreach (var node in _draggedNodes)
+        {
+            if (
+                ReferenceEquals(node, _pointerDragNode)
+                || NodeGrid.ContainerFromItem(node) is not UIElement element
+            )
+                continue;
+            _hiddenDraggedElements.Add(element, element.Opacity);
+            element.Opacity = 0;
+        }
+    }
+
+    private void RestoreHiddenDraggedElements()
+    {
+        foreach (var (element, opacity) in _hiddenDraggedElements)
+            element.Opacity = opacity;
+        _hiddenDraggedElements.Clear();
     }
 
     private void EditableNodeDisplay_Tapped(object sender, TappedRoutedEventArgs e)

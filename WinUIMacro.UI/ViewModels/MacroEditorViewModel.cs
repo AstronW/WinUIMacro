@@ -220,42 +220,6 @@ internal partial class MacroEditorViewModel : ObservableObject
             Nodes.Insert(insertionIndex++, item.Node);
     }
 
-    // 将连续的节点区间移动到新起点，只移动被越过的节点，让列表以最少的 Move 通知重排。
-    public void MoveNodeRange(int start, int count, int newStart)
-    {
-        if (count <= 0 || start < 0 || start + count > Nodes.Count)
-            throw new ArgumentOutOfRangeException(nameof(start));
-        newStart = Math.Clamp(newStart, 0, Nodes.Count - count);
-        if (newStart < start)
-        {
-            for (var index = 0; index < start - newStart; index++)
-                Nodes.Move(newStart, start + count - 1);
-        }
-        else
-        {
-            for (var index = 0; index < newStart - start; index++)
-                Nodes.Move(start + count + index, start + index);
-        }
-    }
-
-    // 按目标顺序重排现有节点；只对错位的节点发出 Move 通知，不重建节点容器。
-    public void ApplyNodeOrder(IReadOnlyList<MacroNodeViewModel> order)
-    {
-        if (order.Count != Nodes.Count)
-            throw new ArgumentException("目标顺序必须包含全部现有节点。", nameof(order));
-        for (var index = 0; index < order.Count; index++)
-        {
-            if (ReferenceEquals(Nodes[index], order[index]))
-                continue;
-            var current = index + 1;
-            while (current < Nodes.Count && !ReferenceEquals(Nodes[current], order[index]))
-                current++;
-            if (current == Nodes.Count)
-                throw new ArgumentException("目标顺序包含不存在的节点。", nameof(order));
-            Nodes.Move(current, index);
-        }
-    }
-
     public void RevertToSavedSnapshot()
     {
         if (_savedSnapshot is null)
